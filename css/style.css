@@ -8,6 +8,16 @@
     --btn-font-style: normal;
 }
 
+::-moz-selection { /* Code for Firefox */
+    color: #000;
+    background: #8AAAE5;
+}
+
+::selection {
+    color: #000;
+    background: #8AAAE5;
+}
+
 /*******************************/
 /********* Font Face *********/
 /*******************************/
@@ -159,7 +169,6 @@ button:focus {
 
 .back-to-top {
     position: fixed;
-    display: none;
     width: 44px;
     height: 44px;
     padding: 8px 0;
@@ -172,11 +181,11 @@ button:focus {
 }
 
 .back-to-top i {
-    color: #ffffff;
+    color: #414141;
 }
 
 .back-to-top:hover i {
-    color: #414141;
+    color: #000000;
 }
 
 
@@ -184,11 +193,12 @@ button:focus {
 /*********** Nav Bar CSS **********/
 /**********************************/
 .navbar {
-    position: relative;
+    position: absolute;
+    top: 0;
+    width: 100%;
     transition: .5s;
     z-index: 999;
-    background-color: #ffffff!important;
-    display: none;
+    box-shadow: 0 -1px #dddddd inset;
 }
 
 .navbar.nav-sticky {
@@ -196,20 +206,27 @@ button:focus {
     top: 0;
     width: 100%;
     box-shadow: 0 2px 5px rgba(0, 0, 0, .3);
+    background: transparent!important;
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
 }
 
 .navbar .navbar-brand {
     margin: 0;
-    font-size: 25px;
+    font-size: 20px;
+    font-family: 'Futura';
+    font-weight: 300;
     line-height: 0px;
-    font-weight: 400;
     letter-spacing: 2px;
-    transition: .5s;   
+    transition: .5s;
+    display: flex;
+    align-items: center;
 }
 
 .navbar .navbar-brand img {
     max-width: 100%;
-    max-height: 40px;
+    max-height: 28px;
+    padding-right: 7px;
 }
 
 .navbar .dropdown-menu {
@@ -223,16 +240,14 @@ button:focus {
     .navbar {
         position: absolute;
         width: 100%;
-        padding: 30px 60px;
+        padding: 5px 60px;
         background: transparent !important;
-        border-bottom: 1px dashed rgba(256, 256, 256, .2);
         z-index: 9;
         background: #ffffff !important;
     }
     
     .navbar.nav-sticky {
-        padding: 10px 60px;
-        background: #ffffff !important;
+        padding: 0 60px;
     }
     
     .navbar .navbar-brand {
@@ -242,13 +257,16 @@ button:focus {
     
     .navbar.nav-sticky .navbar-brand {
         color: #8AAAE5!important;
+        font-size: 16px;
     }
-
+    .navbar.nav-sticky .navbar-brand img{
+        max-height: 24px;
+    }
     .navbar-light .navbar-nav .nav-link,
     .navbar-light .navbar-nav .nav-link:focus {
         padding: 10px 10px 8px 10px;
         color: #ffffff;
-        font-size: 15px;
+        font-size: 13px;
         font-weight: 500;
         color: #414141;
     }
@@ -256,6 +274,7 @@ button:focus {
     .navbar-light.nav-sticky .navbar-nav .nav-link,
     .navbar-light.nav-sticky .navbar-nav .nav-link:focus {
         color: #414141;
+        font-size: 12px;
     }
 
     .navbar-light .navbar-nav .nav-link:hover,
@@ -272,14 +291,29 @@ button:focus {
 
 @media (max-width: 991.98px) {   
     .navbar {
-        padding: 15px;
-        background: #ffffff !important;
+        padding: 5px 30px;
+    }
+    .navbar .navbar-toggler{
+        font-size: 1.1rem;
+        transition: linear .3s
+    }
+    .navbar.nav-sticky .navbar-toggler{
+        font-size: 0.8rem;
     }
     
     .navbar .navbar-brand {
         color: #8AAAE5;
+        transition: linear .3s
     }
-    
+    .navbar .navbar-brand img{
+        transition: linear .3s
+    }
+    .navbar.nav-sticky .navbar-brand{
+        font-size: 14px;
+    }
+    .navbar.nav-sticky .navbar-brand img{
+        max-height: 21px;
+    }
     .navbar .navbar-nav {
         margin-top: 15px;
     }
@@ -308,23 +342,23 @@ button:focus {
     background: url(../img/Animated_Shape.svg);
     background-size: cover;
     background-repeat: no-repeat;
-    background-position: left;
+    background-position: center;
 }
 
 .hero .container-fluid {
     padding: 0;
 }
 
-.hero .hero-image {
-    /* animation: MoveUpDown 2.5s ease-in-out infinite; */
-    /* position: absolute;
+/* .hero .hero-image {
+    animation: MoveUpDown 2.5s ease-in-out infinite;
+    position: absolute;
     height: 10%;
-    width: 100%; */
+    width: 100%;
 
-    /* position: relative;
+    position: relative;
     text-align: right;
-    padding-right: 75px; */
-}
+    padding-right: 75px;
+} */
 
 /* @keyframes MoveUpDown {
     0%, 100% {
@@ -342,7 +376,7 @@ button:focus {
 
 .hero .hero-content {
     position: relative;
-    padding-left: 75px;
+    padding: 0 20px;
     display: flex;
     align-items: flex-start;
     justify-content: center;
@@ -360,7 +394,6 @@ button:focus {
 
 .hero .hero-text h1 {
     font-size: 64px;
-    line-height: 74px;
     font-weight: 600;
     color: #3773F2;
     font-family: 'Futura';
@@ -369,7 +402,7 @@ button:focus {
 .hero .hero-text h2 {
     display: inline-block;
     font-size: 37px;
-    height: 37px;
+    height: 25px;
     font-weight: 600;
     color: #31446C;
     font-family: 'Futura';
@@ -394,7 +427,7 @@ button:focus {
 }
 
 .hero .hero-btn .btn {
-    margin-top: 35px;
+    margin-top: 20px;
     box-shadow: inset 0 0 0 50px #ffffff;
 }
 
@@ -414,14 +447,14 @@ button:focus {
 #home .header-bg{
     
 }
-@media screen and (max-width: 1024px) {
+/* @media screen and (max-width: 1024px) {
     .hero .hero-content{
         align-items: center;
     }
-}
+} */
 @media (max-width: 991.98px) {
     .hero {
-        padding-top: 0;
+        padding-top: 90px;
     }
     
     .hero .hero-content {
@@ -473,7 +506,6 @@ button:focus {
     
     .hero .hero-text h2 {
         font-size: 22px;
-        height: 22px;
     }
     
     .hero .hero-btn .btn {
@@ -566,6 +598,7 @@ button:focus {
 .slider{
     max-width: 1200px;
     margin: auto;
+    padding: 0 30px;    
 }
 .slider .heading{
     font-family: Segoe UI;
@@ -584,7 +617,7 @@ button:focus {
   .logoSlider .items{
     display: flex;
     padding-left: 10%;
-    animation: logoSlider 120s linear infinite;
+    animation: logoSlider 20s linear infinite;
   }
 
   .logoSlider .items:hover {
@@ -617,15 +650,26 @@ button:focus {
       transform: translate(0, 0);
     }
   }
-
-
+@media screen and (max-width: 768px) {
+    .logoSlider .items .item{
+        height: 25px;
+    }
+}
+@media screen and (max-width: 425px) {
+    .logoSlider .items .item{
+        height: 20px;
+    }
+    .logoSlider .items .item{
+        padding: 0 7px;
+    }
+}
 
 /*******************************/
 /******* About CSS ********/
 /*******************************/
 #about{
     background: url(../img/color_dots_header.svg) no-repeat center center;
-    padding: 100px 30px 50px;
+    padding: 100px 30px 10px;
 }
 
 #about .body{
@@ -645,7 +689,7 @@ button:focus {
 }
 
 #about .body .item:hover{
-    background: rgba(163, 163, 163, 0.1);
+    background: rgba(255, 255, 255, 0.5);
     border: 1px solid rgba(104, 95, 95, 0.1);
     box-sizing: border-box;
     /* backdrop-filter: blur(40px); */
@@ -674,6 +718,17 @@ button:focus {
     max-width: 483px;
 }
 
+@media  screen and (max-width: 767.98px) {
+    #about .body .title{
+        font-size: 24px;
+    }
+    #about .body .description{
+        font-size: 16px;
+    }
+    #about .body .row{
+        row-gap: 20px;
+    }
+}
 
 /*******************************/
 /******* Years CSS ********/
@@ -684,7 +739,7 @@ button:focus {
 
 #years .bg-wrapper{
     background: 
-        url(../img/blue_dots_top.svg) repeat-x center top,
+        linear-gradient(rgba(255,255,255,.1), rgba(255,255,255,.1)),
         url(../img/blue_dots_bottom.svg) repeat-x center bottom;
     max-width: 1200px;
     border: 3px solid rgba(138, 170, 229, 0.14);
@@ -704,6 +759,178 @@ button:focus {
     margin-top: 60px;
 }
 
+/*******************************/
+/******* Form CSS ********/
+/*******************************/
+#form{
+    background: url(../img/contact-bg.svg) no-repeat center center;
+    min-height: 1000px;
+    background-size: cover;
+    /* max-width: 1200px; */
+    margin: auto;
+    padding: 100px 30px;
+}
+
+#form .container-contact{
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(104, 95, 95, 0.3);
+    box-sizing: border-box;
+    backdrop-filter: blur(5px);
+    border-radius: 30px;
+    padding: 30px;
+    margin: 60px auto;
+    max-width: 1200px;
+    flex-wrap: wrap-reverse;
+    column-gap: 20px;
+    row-gap: 100px;
+}
+
+#form .common-text-heading,
+#form .common-text-title{
+    color:rgb(255, 255, 255);
+    max-width: 1200px;
+    margin: auto;
+}
+
+#form .contact-form{
+    max-width: 450px;
+}
+
+#form .contact-form-title{
+    font-family: Futura;
+    font-style: normal;
+    font-weight: 700;
+    font-size: 25px;
+    line-height: 30px;
+    text-align: center;
+    letter-spacing: -0.02em;
+    color: #fff;
+    padding: 10px 13px 30px;
+}
+.wrap-input {
+    /* height: 60px; */
+    position: relative;
+    width: 100%;
+    /* border-bottom: 1px solid #fff; */
+    margin-top: 40px;
+}
+
+.contact-form-btn {
+    margin-top: 50px;
+    width: 100%;
+}
+
+textarea.input{
+    min-height: 200px;
+}
+
+.input {
+    background-color: transparent;
+    border: 0;
+    box-sizing: border-box;
+    color: #eee;
+    font-size: 20px;
+    height: 100%;
+    outline: 0;
+    padding: 4px 20px 7px;
+    width: 100%;
+    border-bottom: 1px solid #fff;
+}
+.input:focus{
+    border-bottom: 1px solid #3773F2;
+}
+.cut {
+    border-radius: 10px;
+    height: 20px;
+    left: 0;
+    position: absolute;
+    top: -20px;
+    transform: translateY(0);
+    transition: transform 200ms;
+    width: 76px;
+}
+  
+.input:focus ~ .cut,
+.input:not(:placeholder-shown) ~ .cut {
+    transform: translateY(8px);
+}
+  
+.placeholder {
+    color: #65657b;
+    font-family: sans-serif;
+    left: 10px;
+    line-height: 14px;
+    pointer-events: none;
+    position: absolute;
+    transform-origin: 0 50%;
+    transition: transform 200ms, color 200ms;
+    top: 0;
+}
+  
+.input:focus ~ .placeholder,
+.input:not(:placeholder-shown) ~ .placeholder {
+    transform: translateY(-18px) translateX(8px) scale(0.75);
+}
+  
+.input:not(:placeholder-shown) ~ .placeholder {
+    color: #808097;
+}
+  
+.input:focus ~ .placeholder {
+    color: #ccdbf9;
+}
+
+#form .container-info{
+    margin: 30px 30px 0;
+    gap: 10px;
+}
+#form .container-info .title{
+    font-family: Futura;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 22px;
+    line-height: 18px;
+    color: #fff;
+}
+#form .container-info .heading{
+    font-family: Futura;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 20px;
+    line-height: 18px;
+    color: #797979;
+    margin-top: 30px;
+}
+
+#form .container-info .content a{
+    font-family: Futura;
+    font-style: normal;
+    font-weight: 300;
+    font-size: 20px;
+    line-height: 18px;
+    color: #fff;
+}
+
+#form .container-info .content a:hover{
+    color: #8AAAE5;
+}
+
+#form .container-info .social-media-icon img{
+    width: 30px;
+    filter: grayscale(100%);
+    transition: ease-in-out 0.2s;
+    margin-right: 10px;
+}
+
+#form .container-info .social-media-icon img:hover{
+    filter: grayscale(0);
+}
+
+@media screen and (max-width: 767px){
+    .form-vertical-line{
+        display: none;
+    }
+}
 /*******************************/
 /******* Experience CSS ********/
 /*******************************/
@@ -995,206 +1222,85 @@ button:focus {
 }
 
 /*******************************/
-/********* Contact CSS *********/
-/*******************************/
-.contact {
-    position: relative;
-    width: 100%;
-    margin: 45px 0 0;
-    background: #8AAAE5;
-}
-
-.contact .container-fluid {
-    background: url(../img/burst-kUqqaRjJuw0-unsplash.jpg) left center no-repeat;
-    background-size: contain;
-}
-.contact .contact-form h4{
-    color: #ffffff;
-    margin-bottom: 20px;
-}
-.contact .contact-form input{
-    margin-bottom: 15px;
-}
-.contact .contact-form {
-    position: relative;
-    padding: 90px 0 90px 45px;
-    background: #8AAAE5;
-}
-
-.contact .contact-form input {
-    color: #ffffff;
-    padding: 15px 0;
-    background: none;
-    border-radius: 0;
-    border: none;
-    border-bottom: 1px solid rgba(256, 256, 256, .5);
-}
-
-.contact .contact-form textarea {
-    color: #ffffff;
-    height: 90px;
-    padding: 15px 0;
-    background: none;
-    border-radius: 0;
-    border: none;
-    border-bottom: 1px solid rgba(256, 256, 256, .5);
-}
-
-.contact .contact-form .form-control::placeholder {
-    color: #ffffff;
-    opacity: 1;
-}
-
-.contact .contact-form .form-control:-ms-input-placeholder,
-.contact .contact-form .form-control::-ms-input-placeholder {
-    color: #ffffff;
-}
-
-.contact .contact-form .btn {
-    margin-top: 35px;
-    color: #8AAAE5;
-    background: #ffffff;
-    box-shadow: inset 0 0 0 50px #ffffff;
-}
-
-.contact .contact-form .btn:hover {
-    color: #ffffff;
-    background: transparent;
-    box-shadow: inset 0 0 0 0 #ffffff;
-    border-color: #ffffff;
-}
-
-.contact .help-block ul {
-    margin: 0;
-    padding: 0;
-    list-style-type: none;
-    font-size: 14px;
-    font-style: italic;
-    color: #ffffff;
-}
-
-@media (max-width: 767.98px) {
-    .contact .container-fluid {
-        background: none;
-    }
-    
-    .contact .contact-form {
-        padding: 90px 0;
-    }
-}
-
-/*******************************/
 /********* Footer CSS **********/
 /*******************************/
 .footer {
     position: relative;
-    /* margin-top: 45px; */
-    background: #8AAAE5;
 }
 
 .footer .container-fluid {
-    padding: 60px 0 0 0;
+    padding: 20px 0 20px 0;
 }
 
 .footer .footer-info {
     position: relative;
     width: 100%;
     text-align: center;
-}
-
-.footer .footer-info h2 {
-    margin-bottom: 20px;
-    font-size: 30px;
-    font-weight: 700;
-    color: #ffffff;
-}
-
-.footer .footer-info h3 {
-    font-size: 15px;
-    font-weight: 600;
-    color: #ffffff;
+    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    align-items: center;
+    place-items: center;
+    padding: 0 30px;
+    max-width: 1200px;
+    margin: auto;
+    gap: 10px;
 }
 
 .footer .footer-menu {
-    width: 100%;
     display: flex;
     justify-content: center;
+    flex-flow: column;
 }
 
-.footer .footer-menu p {
-    color: #ffffff;
-    font-size: 15px;
+.footer .footer-menu .caption {
+    font-size: 10px;
+    max-width: 226px;
+    text-align: left;
+    font-family: 'Futura';
     font-weight: 400;
-    line-height: normal;
-    padding: 0 15px;
-    border-right: 1px solid #ffffff;
-}
-
-.footer .footer-menu p:last-child {
-    border: none;
 }
 
 .footer .footer-social {
     position: relative;
-    margin-top: 15px;
+    margin-top: 0;
 }
 
 .footer .footer-social a {
     display: inline-block;
 }
 
-.footer .footer-social a i {
-    margin-right: 15px;
-    font-size: 20px;
-    color: #ffffff;
+.footer .footer-social a img {
     transition: .3s;
+    width: 15px;
 }
 
-.footer .footer-social a:last-child i {
-    margin: 0;
-}
-
-.footer .footer-social a:hover i {
-    color: #414141;
+.footer .footer-social a:hover {
+    transform: scale(1.2);
 }
 
 .footer .copyright {
     position: relative;
-    text-align: center;
-    margin-top: 30px;
-    padding-top: 25px;
-    padding-bottom: 25px;
-}
-
-.footer .copyright::before {
-    position: absolute;
-    content: "";
-    width: 50%;
-    height: 1px;
-    top: 0;
-    left: 25%;
-    background: rgba(256, 256, 256, .2);
-}
-
-.footer .copyright p {
-    margin: 0;
-    color: #ffffff;
-}
-
-.footer .copyright .col-md-6:last-child p {
-    text-align: right;
-}
-
-.footer .copyright p a {
-    color: #ffffff;
-    font-weight: 600;
-}
-
-.footer .copyright p a:hover {
+    text-align: left;
+    font-family: 'Futura';
     color: #414141;
+    padding: 0;
+    font-weight: 400;
+    font-size: 13px;
 }
-
+.footer-center-info{
+    font-size: 10px;
+    text-align: left;
+    font-family: 'Futura';
+    font-weight: 400;
+}
 @media (max-width: 575.98px) {
+    .footer .footer-info{
+        grid-template-columns: unset;
+        grid-template-rows: 1fr 1fr 1fr;
+        gap: 0;
+        justify-content: center;
+    }
     .footer .footer-info h2 {
         margin-bottom: 20px;
         font-size: 20px;
@@ -1253,6 +1359,19 @@ button:focus {
     margin: auto;
     max-width: 775px;
     margin-bottom: 8px;
+}
+
+@media screen and (max-width: 767px) {
+    .common-text-heading{
+        font-size: 17px;
+    }   
+    .common-text-title{
+        font-size: 27px;
+        line-height: 33px;
+    } 
+    .common-text-description{
+        font-size: 18px;
+    }
 }
 
 /* Animation */
@@ -1411,10 +1530,11 @@ button:focus {
     }
 }
 
-.container-form{
-    padding: 0;
+@media screen and (max-width: 768px){
+    .Button{
+        font-size: 15px;
+    }
 }
-
 @media screen and (max-width: 500px) {
     .container-form{
         padding: 0 20px;

@@ -131,11 +131,11 @@
             url: "https://script.google.com/macros/s/AKfycbxtaqrgJYHhX94t1W69CRpz7R4ZGTFOVJJHGTn7RJfLMPtQpPVo97mmVghPMHYobLr_/exec",
             method: "POST",
             dataType: "json",
-            data: $(".contact1-form").serialize(),
+            data: $(".contact-form").serialize(),
             success: function(response) {
                 
                 if(response.result == "success") {
-                    $('.contact1-form')[0].reset();
+                    $('.contact-form')[0].reset();
                     alert('Thank you for contacting us.');
                     return true;
                 }
@@ -144,13 +144,14 @@
                 }
             },
             error: function() {
+                
                 alert("Something went wrong. Please try again.")
             }
         })
     });
 
 
-    $('.validate-form .input1').each(function(){
+    $('.validate-form .input').each(function(){
         $(this).focus(function(){
            hideValidate(this);
        });
