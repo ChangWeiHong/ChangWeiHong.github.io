@@ -100,6 +100,8 @@
 
 
     $('.validate-form').on('submit',function(e){
+
+        $(".contact-form-btn").html("<i class='fa fa-circle-o-notch fa-spin'></i> Loading...");
         var check = true;
 
         if($(name).val().trim() == ''){
@@ -137,15 +139,18 @@
                 if(response.result == "success") {
                     $('.contact-form')[0].reset();
                     alert('Thank you for contacting us.');
+                    $(".contact-form-btn").html("Submit");
+                    $(".form-success").show();
                     return true;
                 }
                 else {
-                    alert("Something went wrong. Please try again.")
+                    $(".form-error").show();
+                    $(".contact-form-btn").html("Submit");
+                    alert("Something went wrong. Please try again. You can also email us manually.")
                 }
             },
             error: function() {
-                
-                alert("Something went wrong. Please try again.")
+                alert("Something went wrong. Please try again. You can also email us manually.")
             }
         })
     });
