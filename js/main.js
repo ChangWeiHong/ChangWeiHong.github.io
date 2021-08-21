@@ -46,9 +46,11 @@
             event.preventDefault();
             
             $('html, body').animate({
-                scrollTop: $(this.hash).offset().top - 45
+                scrollTop: $(this.hash).offset().top - 70
             }, 1500, 'easeInOutExpo');
             
+            $("#navbarCollapse").collapse('hide');
+
             if ($(this).parents('.navbar-nav').length) {
                 $('.navbar-nav .active').removeClass('active');
                 $(this).closest('a').addClass('active');
@@ -68,27 +70,6 @@
             loop: true
         });
     }
-    
-    
-    // Skills
-    $('.skills').waypoint(function () {
-        $('.progress .progress-bar').each(function () {
-            $(this).css("width", $(this).attr("aria-valuenow") + '%');
-        });
-    }, {offset: '80%'});
-    
-    
-    // Portfolio filter
-    var portfolioIsotope = $('.portfolio-container').isotope({
-        itemSelector: '.portfolio-item',
-        layoutMode: 'fitRows'
-    });
-
-    $('#portfolio-filter li').on('click', function () {
-        $("#portfolio-filter li").removeClass('filter-active');
-        $(this).addClass('filter-active');
-        portfolioIsotope.isotope({filter: $(this).data('filter')});
-    });
     
 
     /*==================================================================
@@ -144,12 +125,14 @@
                     return true;
                 }
                 else {
-                    $(".form-error").show();
+                    $(".form-error").css('display', 'block');
                     $(".contact-form-btn").html("Submit");
                     alert("Something went wrong. Please try again. You can also email us manually.")
                 }
             },
             error: function() {
+                $(".form-error").css('display', 'block');
+                $(".contact-form-btn").html("Submit");
                 alert("Something went wrong. Please try again. You can also email us manually.")
             }
         })
@@ -164,15 +147,30 @@
 
     function showValidate(input) {
         var thisAlert = $(input).parent();
-
+        $(".contact-form-btn").html("Submit");
         $(thisAlert).addClass('alert-validate');
     }
 
     function hideValidate(input) {
         var thisAlert = $(input).parent();
-
+        $(".contact-form-btn").html("Submit");
         $(thisAlert).removeClass('alert-validate');
     }
     
+
+    $(document).mouseup(function(e) 
+    {
+        var container = $("#navbarCollapse");
+
+        // if the target of the click isn't the container nor a descendant of the container
+        if (!container.is(e.target) && container.has(e.target).length === 0 ) 
+        {
+            container.collapse('hide');
+        }
+    });
+    
+    $(".navbar-nav a").mouseup(function() {
+        // $("#navbarCollapse").collapse('hide');
+    });
     
 })(jQuery);
