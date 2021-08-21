@@ -18,6 +18,11 @@
     background: #8AAAE5;
 }
 
+body::after{
+    position:absolute; width:0; height:0; overflow:hidden; z-index:-1;
+    content:url(../img/josh-rose-trYl7JYATH0-unsplash.jpg);
+ }
+
 /*******************************/
 /********* Font Face *********/
 /*******************************/
@@ -335,7 +340,7 @@ button:focus {
 .hero {
     position: relative;
     width: 100%;
-    padding: 120px 30px;
+    padding: 120px 30px 80px;
     overflow: hidden;
     min-height: 80vh;
     align-items: center;
@@ -444,9 +449,7 @@ button:focus {
     padding: 50px 10px;
     min-height: 600px;
 }
-#home .header-bg{
-    
-}
+
 /* @media screen and (max-width: 1024px) {
     .hero .hero-content{
         align-items: center;
@@ -481,9 +484,12 @@ button:focus {
 }
 
 @media (max-width: 767.98px) {
+    #home .glasscard{
+        max-height: 80vh;
+    }
     .hero {
-        padding-top: 60px;
-        padding-bottom: 60px;
+        padding-top: 70px;
+        padding-bottom: 25px;
         min-height: auto;
     }
     .hero .hero-image {
@@ -617,7 +623,7 @@ button:focus {
   .logoSlider .items{
     display: flex;
     padding-left: 10%;
-    animation: logoSlider 20s linear infinite;
+    animation: logoSlider 60s linear infinite;
   }
 
   .logoSlider .items:hover {
@@ -654,7 +660,27 @@ button:focus {
     .logoSlider .items .item{
         height: 25px;
     }
+
+    .logoSlider .items{
+        display: flex;
+        padding-left: 10%;
+        animation: logoSlider 80s linear infinite;
+    }
+
+    @keyframes logoSlider {
+        0% {
+          transform: translate(0, 0);
+        }
+        50% {
+          transform: translate(-300%, 0);
+        }
+    
+        100% {
+          transform: translate(0, 0);
+        }
+    }
 }
+
 @media screen and (max-width: 425px) {
     .logoSlider .items .item{
         height: 20px;
@@ -686,9 +712,6 @@ button:focus {
     border-radius: 20px;
     padding: 20px;
     transition: all ease-out 0.3s;
-}
-
-#about .body .item:hover{
     background: rgba(255, 255, 255, 0.5);
     border: 1px solid rgba(104, 95, 95, 0.1);
     box-sizing: border-box;
@@ -696,7 +719,10 @@ button:focus {
     border-radius: 20px;
     backdrop-filter: blur(16px) saturate(180%);
     -webkit-backdrop-filter: blur(16px) saturate(180%);
-    transform: scale(101%);
+}
+
+#about .body .item:hover{
+    transform: scale(98%);
 }
 #about .body .title{
     font-family: Futura;
@@ -734,15 +760,17 @@ button:focus {
 /******* Years CSS ********/
 /*******************************/
 #years{
-    margin: 0 30px;
+    margin: 0px 30px 110px;
 }
 
 #years .bg-wrapper{
     background: 
         linear-gradient(rgba(255,255,255,.1), rgba(255,255,255,.1)),
-        url(../img/blue_dots_bottom.svg) repeat-x center bottom;
+        /* url(../img/Circuit-Primary-right.svg) repeat-x center right,
+        url(../img/Circuit-Primary-left.svg) repeat-x center left; */
+        url(../img/Circuit-Primary-bottom2.svg) repeat-x center bottom;
     max-width: 1200px;
-    border: 3px solid rgba(138, 170, 229, 0.14);
+    border: 2px solid rgba(138, 170, 229, 0.14);
     border-radius: 20px;
     overflow: hidden;
     min-height: 400px;
@@ -763,19 +791,19 @@ button:focus {
 /******* Form CSS ********/
 /*******************************/
 #form{
-    background: url(../img/contact-bg.svg) no-repeat center center;
+    background: url(../img/josh-rose-trYl7JYATH0-unsplash.jpg) no-repeat center center;
     min-height: 1000px;
     background-size: cover;
     /* max-width: 1200px; */
     margin: auto;
-    padding: 100px 30px;
+    padding: 100px 30px 40px;
 }
 
 #form .container-contact{
     background: rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(104, 95, 95, 0.3);
     box-sizing: border-box;
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(10px);
     border-radius: 30px;
     padding: 30px;
     margin: 60px auto;
@@ -900,6 +928,7 @@ textarea.input{
     line-height: 18px;
     color: #797979;
     margin-top: 30px;
+    padding-bottom: 5px;
 }
 
 #form .container-info .content a{
@@ -1254,7 +1283,7 @@ textarea.input{
 }
 
 .footer .footer-menu .caption {
-    font-size: 10px;
+    font-size: 12px;
     max-width: 226px;
     text-align: left;
     font-family: 'Futura';
@@ -1289,10 +1318,13 @@ textarea.input{
     font-size: 13px;
 }
 .footer-center-info{
-    font-size: 10px;
+    font-size: 12px;
     text-align: left;
     font-family: 'Futura';
     font-weight: 400;
+}
+.footer-center-info span{
+    white-space: nowrap;
 }
 @media (max-width: 575.98px) {
     .footer .footer-info{
@@ -1495,6 +1527,7 @@ textarea.input{
 .Button--primary{
 	color: #fff;
 	border-color: #3773F2;
+    background-color: #fff;
     transition: color 0.45s cubic-bezier(0.785, 0.135, 0.15, 0.86), border 0.45s cubic-bezier(0.785, 0.135, 0.15, 0.86);
 }
 
@@ -1517,7 +1550,7 @@ textarea.input{
 @media (-moz-touch-enabled: 0), (hover: hover) {
     .Button--primary:not([disabled]):hover{
         color: #3773F2;
-        background-color: transparent;
+        background-color: #fff;
         transition: transform .45s cubic-bezier(.785, .135, .15, .86);
     }
     .Button--secondary:not([disabled]):hover{
