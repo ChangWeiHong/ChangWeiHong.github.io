@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Static QR Generator</title>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-MKW4d9UOiZQe9ODzWm7f2n/Q+lCblA9P8JnqH6AayJQ5UqQszfQuZVUnkQwR7c9xw2VMBuN2e7b+0kL9C1Nw3g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <style>
+    :root{
+      --bg:#0b0d10;--panel:#12151a;--muted:#a9b1bd;--text:#e6edf3;--accent:#7aa2f7;--border:#222833;--ok:#7ee787;--warn:#ffb86c;--danger:#ff6b6b;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:radial-gradient(1200px 700px at 20% -10%, #1a2030 0%, #0b0d10 60%);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji"}
+    .wrap{max-width:980px;margin:32px auto;padding:0 16px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+    h1{font-size:22px;font-weight:700;letter-spacing:.3px;margin:0}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.00));border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
+    .controls{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .controls .full{grid-column:1 / -1}
+    label{font-size:12px;color:var(--muted);display:block;margin:2px 0 6px}
+    input, select{width:100%;padding:10px 12px;background:var(--panel);border:1px solid var(--border);border-radius:10px;color:var(--text);outline:none}
+    input::placeholder{color:#5b6573}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    button{appearance:none;border:1px solid var(--border);background:linear-gradient(180deg,#1a1f28,#12151a);color:var(--text);padding:10px 14px;border-radius:12px;cursor:pointer}
+    button.primary{border-color:#2a3a5f;background:linear-gradient(180deg,#26375a,#18243a);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+    button:hover{filter:brightness(1.1)}
+    .pill{font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:#0e1218;color:var(--muted)}
+    .preview{display:grid;place-items:center;background:#0a0c10;border:1px dashed #273043;border-radius:14px;min-height:420px;position:relative}
+    .qr-slot{padding:14px;background:#0a0c10;border-radius:12px}
+    .foot{margin-top:10px;font-size:12px;color:var(--muted)}
+    .muted{color:var(--muted)}
+    .tiny{font-size:11px}
+    .badge{font-size:11px;padding:4px 8px;border-radius:999px;background:#0e1420;border:1px solid #26324a;color:#a7c0ff}
+    .right{justify-content:flex-end}
+    .sep{height:1px;background:linear-gradient(90deg,transparent, #243048 40%, #243048 60%, transparent);margin:12px 0}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}.controls{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Static QR Generator</h1>
+      <span class="badge">PNG export • transparent & white</span>
+    </header>
+
+    <div class="grid">
+      <section class="card">
+        <div class="controls">
+          <div class="full">
+            <label for="url">Target URL</label>
+            <input id="url" type="url" placeholder="https://changweihong.github.io/my-linktree/" autocomplete="off" />
+          </div>
+          <div>
+            <label for="size">Size (px)</label>
+            <input id="size" type="number" min="128" step="64" value="1024">
+          </div>
+          <div>
+            <label for="margin">Margin (quiet zone, px)</label>
+            <input id="margin" type="number" min="0" step="2" value="20">
+          </div>
+          <div>
+            <label for="ec">Error Correction</label>
+            <select id="ec">
+              <option value="L">L (smallest)</option>
+              <option value="M" selected>M</option>
+              <option value="Q">Q</option>
+              <option value="H">H (largest)</option>
+            </select>
+          </div>
+          <div>
+            <label for="fg">QR Color</label>
+            <input id="fg" type="color" value="#000000" />
+          </div>
+          <div class="row full">
+            <button id="gen" class="primary">Generate</button>
+            <button id="saveUrl">Remember URL</button>
+            <span id="status" class="pill" aria-live="polite"></span>
+          </div>
+        </div>
+        <div class="sep"></div>
+        <div class="row">
+          <button id="dlWhite">Download PNG (white bg)</button>
+          <button id="dlTransparent">Download PNG (transparent)</button>
+        </div>
+        <p class="foot">Tip: set size to 1024+ for print. This page is 100% static. No uploads. Nothing leaves your browser.</p>
+      </section>
+
+      <section class="card preview">
+        <div id="qr-slot" class="qr-slot" aria-label="QR preview"></div>
+      </section>
+    </div>
+
+    <p class="tiny muted" style="margin-top:12px">Uses <code>qrcodejs</code>. Exports are pixel-perfect. White pixels are turned transparent for the transparent download.</p>
+  </div>
+
+  <script>
+    const $ = s => document.querySelector(s);
+    const status = msg => { const el = $('#status'); el.textContent = msg; if(msg) setTimeout(()=> el.textContent='', 1600); };
+
+    (function init(){
+      const saved = localStorage.getItem('qr.fixedUrl');
+      if(saved) $('#url').value = saved;
+      else $('#url').value = 'https://changweihong.github.io/my-linktree/';
+      generate();
+    })();
+
+    const EC_MAP = { L: 1, M: 0, Q: 3, H: 2 };
+
+    let currentCanvasWhite = null;
+
+    function generate(){
+      const url = $('#url').value.trim();
+      if(!url){ status('Enter a URL'); return; }
+      const size = Math.max(128, parseInt($('#size').value||512,10));
+      const margin = Math.max(0, parseInt($('#margin').value||20,10));
+      const ec = EC_MAP[$('#ec').value] ?? 0;
+      const colorDark = $('#fg').value || '#000000';
+
+      const slot = $('#qr-slot');
+      slot.innerHTML = '';
+
+      const temp = document.createElement('div');
+      slot.appendChild(temp);
+
+      const qr = new QRCode(temp, {
+        text: url,
+        width: size,
+        height: size,
+        colorDark,
+        colorLight: '#ffffff',
+        correctLevel: ec
+      });
+
+      setTimeout(()=>{
+        let canvas = temp.querySelector('canvas');
+        const img = temp.querySelector('img');
+        if(!canvas && img){
+          canvas = document.createElement('canvas');
+          canvas.width = img.width; canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#fff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+          ctx.drawImage(img,0,0);
+        }
+
+        if(!canvas){ status('QR render failed'); return; }
+
+        const withMargin = document.createElement('canvas');
+        withMargin.width = size + margin*2;
+        withMargin.height = size + margin*2;
+        const c2 = withMargin.getContext('2d');
+        c2.fillStyle = '#ffffff';
+        c2.fillRect(0,0,withMargin.width,withMargin.height);
+        c2.drawImage(canvas, margin, margin);
+
+        slot.innerHTML = '';
+        withMargin.style.maxWidth = '100%';
+        withMargin.style.height = 'auto';
+        slot.appendChild(withMargin);
+        currentCanvasWhite = withMargin;
+
+        status('Generated');
+      }, 0);
+    }
+
+    function makeTransparentCanvas(srcCanvas){
+      const out = document.createElement('canvas');
+      out.width = srcCanvas.width; out.height = srcCanvas.height;
+      const ctx = out.getContext('2d');
+      ctx.drawImage(srcCanvas, 0, 0);
+      const img = ctx.getImageData(0,0,out.width,out.height);
+      const d = img.data;
+      for(let i=0;i<d.length;i+=4){
+        if(d[i] > 250 && d[i+1] > 250 && d[i+2] > 250){
+          d[i+3] = 0;
+        }
+      }
+      ctx.putImageData(img,0,0);
+      return out;
+    }
+
+    function downloadCanvasPNG(canvas, filename){
+      canvas.toBlob(blob => {
+        if(!blob){ status('Export failed'); return; }
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        URL.revokeObjectURL(a.href);
+        a.remove();
+      }, 'image/png');
+    }
+
+    $('#gen').addEventListener('click', generate);
+
+    $('#saveUrl').addEventListener('click', ()=>{
+      const v = $('#url').value.trim();
+      if(!v){ status('Nothing to save'); return; }
+      localStorage.setItem('qr.fixedUrl', v);
+      status('URL remembered');
+    });
+
+    $('#dlWhite').addEventListener('click', ()=>{
+      if(!currentCanvasWhite){ status('Generate first'); return; }
+      const fname = 'qr-white-' + Date.now() + '.png';
+      downloadCanvasPNG(currentCanvasWhite, fname);
+    });
+
+    $('#dlTransparent').addEventListener('click', ()=>{
+      if(!currentCanvasWhite){ status('Generate first'); return; }
+      const transparent = makeTransparentCanvas(currentCanvasWhite);
+      const fname = 'qr-transparent-' + Date.now() + '.png';
+      downloadCanvasPNG(transparent, fname);
+    });
+  </script>
+</body>
+</html>
