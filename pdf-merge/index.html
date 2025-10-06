@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PDF Merger (Client-side)</title>
+  <meta name="description" content="Merge multiple PDFs in the browser. No upload. No server." />
+  <style>
+    :root { --bg:#0b1220; --card:#111827; --text:#e5e7eb; --muted:#94a3b8; --accent:#22d3ee; }
+    body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif; background:var(--bg); color:var(--text);}
+    .wrap { max-width:720px; margin:40px auto; padding:24px; background:var(--card); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.3);}
+    h1 { margin:0 0 12px; font-size:22px; }
+    p { margin:4px 0 16px; color:var(--muted); }
+    .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    input[type=file] { padding:10px; background:#0f172a; color:var(--text); border:1px solid #1f2937; border-radius:8px; }
+    button { padding:10px 14px; border:0; border-radius:8px; background:var(--accent); color:#061018; font-weight:600; cursor:pointer; }
+    button:disabled { opacity:.5; cursor:not-allowed; }
+    ol { margin-top:16px; padding-left:22px; }
+    li { margin:8px 0; display:flex; align-items:center; gap:8px; }
+    .name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .small { font-size:12px; color:var(--muted); }
+    .ghost { background:#0f172a; border:1px dashed #334155; padding:10px; border-radius:8px; text-align:center; }
+    .pill { font-size:11px; padding:2px 8px; border-radius:999px; background:#0f172a; color:var(--muted); border:1px solid #1f2937; }
+    progress { width:100%; height:12px; }
+    .right { margin-left:auto; display:flex; gap:6px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>PDF Merger</h1>
+    <p class="small">All processing happens in your browser. Order is the order you select. You can nudge with ↑/↓ if your fingers slipped.</p>
+
+    <div class="row">
+      <input id="fileInput" type="file" accept="application/pdf" multiple />
+      <button id="mergeBtn" disabled>Merge PDFs</button>
+      <span id="count" class="pill">0 files</span>
+    </div>
+
+    <div id="listWrap" class="ghost small" style="margin-top:12px;">No files yet. Add some PDFs.</div>
+    <ol id="fileList" hidden></ol>
+
+    <div id="status" style="margin-top:16px;"></div>
+    <div id="progressWrap" style="margin-top:8px; display:none;">
+      <progress id="prog" value="0" max="100"></progress>
+    </div>
+  </div>
+
+  <!-- pdf-lib via CDN. Do NOT add integrity= if your host complains. -->
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script>
+    // State
+    let files = []; // [{file: File, id: number}]
+    let seq = 0;
+
+    const $ = (id) => document.getElementById(id);
+    const fileInput = $("fileInput");
+    const fileList  = $("fileList");
+    const listWrap  = $("listWrap");
+    const mergeBtn  = $("mergeBtn");
+    const count     = $("count");
+    const status    = $("status");
+    const progWrap  = $("progressWrap");
+    const prog      = $("prog");
+
+    fileInput.addEventListener("change", (e) => {
+      const picked = Array.from(e.target.files || []);
+      if (!picked.length) return;
+
+      // Keep order of selection. Append to existing list.
+      picked.forEach(f => files.push({ file: f, id: ++seq }));
+
+      redraw();
+      e.target.value = ""; // allow selecting same files again later
+    });
+
+    function redraw() {
+      count.textContent = `${files.length} file${files.length !== 1 ? 's' : ''}`;
+      if (!files.length) {
+        fileList.hidden = true;
+        listWrap.style.display = "block";
+        mergeBtn.disabled = true;
+        return;
+      }
+      fileList.hidden = false;
+      listWrap.style.display = "none";
+      mergeBtn.disabled = false;
+
+      // Render list
+      fileList.innerHTML = "";
+      files.forEach((entry, idx) => {
+        const li = document.createElement("li");
+        const name = document.createElement("span");
+        name.className = "name";
+        name.textContent = `${idx + 1}. ${entry.file.name}`;
+        li.appendChild(name);
+
+        const size = document.createElement("span");
+        size.className = "small";
+        size.textContent = `(${fmtBytes(entry.file.size)})`;
+        li.appendChild(size);
+
+        const right = document.createElement("span");
+        right.className = "right";
+
+        const up = document.createElement("button");
+        up.title = "Move up";
+        up.textContent = "↑";
+        up.onclick = () => {
+          if (idx === 0) return;
+          [files[idx - 1], files[idx]] = [files[idx], files[idx - 1]];
+          redraw();
+        };
+
+        const down = document.createElement("button");
+        down.title = "Move down";
+        down.textContent = "↓";
+        down.onclick = () => {
+          if (idx === files.length - 1) return;
+          [files[idx + 1], files[idx]] = [files[idx], files[idx + 1]];
+          redraw();
+        };
+
+        const remove = document.createElement("button");
+        remove.title = "Remove";
+        remove.textContent = "✕";
+        remove.onclick = () => {
+          files.splice(idx, 1);
+          redraw();
+        };
+
+        right.appendChild(up);
+        right.appendChild(down);
+        right.appendChild(remove);
+        li.appendChild(right);
+
+        fileList.appendChild(li);
+      });
+    }
+
+    mergeBtn.addEventListener("click", async () => {
+      if (!files.length) return;
+      disableUI(true);
+      status.textContent = "Merging… try not to upload a 500-page tax return set, thanks.";
+      progWrap.style.display = "block";
+      prog.value = 0;
+
+      try {
+        const { PDFDocument } = PDFLib;
+        const outPdf = await PDFDocument.create();
+
+        let done = 0;
+        for (const { file } of files) {
+          const bytes = await file.arrayBuffer();
+          const src = await PDFDocument.load(bytes);
+          const pageIndices = src.getPageIndices();
+          const copied = await outPdf.copyPages(src, pageIndices);
+          copied.forEach(p => outPdf.addPage(p));
+          done++;
+          prog.value = Math.round((done / files.length) * 100);
+        }
+
+        const mergedBytes = await outPdf.save({ updateFieldAppearances: false });
+        const blob = new Blob([mergedBytes], { type: "application/pdf" });
+        const url = URL.createObjectURL(blob);
+
+        // Download
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `merged-${new Date().toISOString().replace(/[:.]/g,'-')}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+
+        status.textContent = "Done. Your Frankenstein PDF is ready.";
+      } catch (err) {
+        console.error(err);
+        status.textContent = "Failed to merge. One of those PDFs might be corrupted or password-protected.";
+      } finally {
+        disableUI(false);
+        progWrap.style.display = "none";
+      }
+    });
+
+    function disableUI(disabled) {
+      fileInput.disabled = disabled;
+      mergeBtn.disabled = disabled || !files.length;
+      document.querySelectorAll("button").forEach(b => b.disabled = disabled);
+    }
+
+    function fmtBytes(n) {
+      if (n < 1024) return n + " B";
+      const units = ["KB","MB","GB","TB"];
+      let u = -1;
+      do { n /= 1024; u++; } while (n >= 1024 && u < units.length - 1);
+      return n.toFixed(1) + " " + units[u];
+    }
+  </script>
+</body>
+</html>
