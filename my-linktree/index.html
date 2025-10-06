@@ -120,14 +120,53 @@
     </div>
   </main>
 
-  <script>
+    <script>
     document.getElementById('year').textContent = new Date().getFullYear();
     const EMAIL = 'dev.weihong@gmail.com';
     const PAGE_URL = 'https://changweihong.github.io/my-linktree/';
 
     function toast(msg){
-      const el=document.createElement('div'); el.textContent=msg; el.style.position='fixed'; el.style.left='50%'; el.style.top='16px'; el.style.transform='translateX(-50%)'; el.style.background='var(--card)'; el.style.color='var(--text)'; el.style.padding='10px 14px'; el.style.border='1px solid var(--accent)'; el.style.borderRadius='12px'; el.style.boxShadow='0 6px 18px rgba(0,0,0,.3)'; el.style.zIndex=9999; document.body.appendChild(el); setTimeout(()=>el.remove(),1500);
+      const el = document.createElement('div');
+      el.textContent = msg;
+      el.style.position = 'fixed';
+      el.style.left = '50%';
+      el.style.top = '16px';
+      el.style.transform = 'translateX(-50%)';
+      el.style.background = 'var(--card)';
+      el.style.color = 'var(--text)';
+      el.style.padding = '10px 14px';
+      el.style.border = '1px solid var(--accent)';
+      el.style.borderRadius = '12px';
+      el.style.boxShadow = '0 6px 18px rgba(0,0,0,.3)';
+      el.style.zIndex = 9999;
+      el.style.transition = 'opacity .3s ease';
+      document.body.appendChild(el);
+      setTimeout(() => el.style.opacity = '0', 1200);
+      setTimeout(() => el.remove(), 1500);
     }
 
     function copyToClipboard(text, message){
-      navigator.clipboard.writeText(text).then(()=>toast(message)).catch(()=>{
+      navigator.clipboard.writeText(text)
+        .then(() => toast(message))
+        .catch(() => {
+          // Fallback if clipboard API fails
+          const textarea = document.createElement('textarea');
+          textarea.value = text;
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+          toast(message);
+        });
+    }
+
+    document.getElementById('copyUrl').addEventListener('click', () => {
+      copyToClipboard(PAGE_URL, 'Page URL copied!');
+    });
+
+    document.getElementById('copyEmail').addEventListener('click', () => {
+      copyToClipboard(EMAIL, 'Email copied!');
+    });
+  </script>
+</body>
+</html>
