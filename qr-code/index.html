@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Static QR Generator</title>
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-MKW4d9UOiZQe9ODzWm7f2n/Q+lCblA9P8JnqH6AayJQ5UqQszfQuZVUnkQwR7c9xw2VMBuN2e7b+0kL9C1Nw3g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <style>
     :root{
       --bg:#0b0d10;--panel:#12151a;--muted:#a9b1bd;--text:#e6edf3;--accent:#7aa2f7;--border:#222833;--ok:#7ee787;--warn:#ffb86c;--danger:#ff6b6b;
@@ -75,15 +75,15 @@
             <input id="fg" type="color" value="#000000" />
           </div>
           <div class="row full">
-            <button id="gen" class="primary">Generate</button>
-            <button id="saveUrl">Remember URL</button>
+            <button id="gen" class="primary" type="button">Generate</button>
+            <button id="saveUrl" type="button">Remember URL</button>
             <span id="status" class="pill" aria-live="polite"></span>
           </div>
         </div>
         <div class="sep"></div>
         <div class="row">
-          <button id="dlWhite">Download PNG (white bg)</button>
-          <button id="dlTransparent">Download PNG (transparent)</button>
+          <button id="dlWhite" type="button">Download PNG (white bg)</button>
+          <button id="dlTransparent" type="button">Download PNG (transparent)</button>
         </div>
         <p class="foot">Tip: set size to 1024+ for print. This page is 100% static. No uploads. Nothing leaves your browser.</p>
       </section>
@@ -97,21 +97,43 @@
   </div>
 
   <script>
-    const $ = s => document.querySelector(s);
-    const status = msg => { const el = $('#status'); el.textContent = msg; if(msg) setTimeout(()=> el.textContent='', 1600); };
-
-    (function init(){
-      const saved = localStorage.getItem('qr.fixedUrl');
-      if(saved) $('#url').value = saved;
-      else $('#url').value = 'https://changweihong.github.io/my-linktree/';
-      generate();
-    })();
-
+    // Config/constants first to avoid temporal dead zones
     const EC_MAP = { L: 1, M: 0, Q: 3, H: 2 };
+
+    // Tiny helpers
+    const $ = s => document.querySelector(s);
+    const status = msg => { const el = document.querySelector('#status'); if(!el) return; el.textContent = msg; if(msg) setTimeout(()=> el.textContent='', 1600); };
+
+    // Polyfill for canvas.toBlob (Safari/older browsers)
+    if (!HTMLCanvasElement.prototype.toBlob) {
+      HTMLCanvasElement.prototype.toBlob = function(callback, type, quality) {
+        const dataURL = this.toDataURL(type || 'image/png', quality);
+        const byteString = atob(dataURL.split(',')[1]);
+        const len = byteString.length;
+        const u8arr = new Uint8Array(len);
+        for (let i = 0; i < len; i++) { u8arr[i] = byteString.charCodeAt(i); }
+        callback(new Blob([u8arr], { type: type || 'image/png' }));
+      };
+    }
 
     let currentCanvasWhite = null;
 
+    function ensureLib(){
+      if (typeof QRCode === 'undefined') {
+        status('QR library failed to load. Using fallback URL.');
+        // try alternate CDN once
+        const alt = document.createElement('script');
+        alt.src = 'https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js';
+        alt.onload = () => { status('QR library loaded'); generate(); };
+        alt.onerror = () => status('QR library still not available.');
+        document.head.appendChild(alt);
+        return false;
+      }
+      return true;
+    }
+
     function generate(){
+      if(!ensureLib()) return;
       const url = $('#url').value.trim();
       if(!url){ status('Enter a URL'); return; }
       const size = Math.max(128, parseInt($('#size').value||512,10));
@@ -144,7 +166,6 @@
           ctx.fillStyle = '#fff'; ctx.fillRect(0,0,canvas.width,canvas.height);
           ctx.drawImage(img,0,0);
         }
-
         if(!canvas){ status('QR render failed'); return; }
 
         const withMargin = document.createElement('canvas');
@@ -155,12 +176,12 @@
         c2.fillRect(0,0,withMargin.width,withMargin.height);
         c2.drawImage(canvas, margin, margin);
 
-        slot.innerHTML = '';
+        const slot2 = $('#qr-slot');
+        slot2.innerHTML = '';
         withMargin.style.maxWidth = '100%';
         withMargin.style.height = 'auto';
-        slot.appendChild(withMargin);
+        slot2.appendChild(withMargin);
         currentCanvasWhite = withMargin;
-
         status('Generated');
       }, 0);
     }
@@ -173,9 +194,7 @@
       const img = ctx.getImageData(0,0,out.width,out.height);
       const d = img.data;
       for(let i=0;i<d.length;i+=4){
-        if(d[i] > 250 && d[i+1] > 250 && d[i+2] > 250){
-          d[i+3] = 0;
-        }
+        if(d[i] > 250 && d[i+1] > 250 && d[i+2] > 250){ d[i+3] = 0; }
       }
       ctx.putImageData(img,0,0);
       return out;
@@ -194,26 +213,31 @@
       }, 'image/png');
     }
 
-    $('#gen').addEventListener('click', generate);
+    // Event wiring
+    window.addEventListener('load', () => {
+      $('#gen').addEventListener('click', generate);
+      $('#saveUrl').addEventListener('click', ()=>{
+        const v = $('#url').value.trim();
+        if(!v){ status('Nothing to save'); return; }
+        localStorage.setItem('qr.fixedUrl', v);
+        status('URL remembered');
+      });
+      $('#dlWhite').addEventListener('click', ()=>{
+        if(!currentCanvasWhite){ status('Generate first'); return; }
+        const fname = 'qr-white-' + Date.now() + '.png';
+        downloadCanvasPNG(currentCanvasWhite, fname);
+      });
+      $('#dlTransparent').addEventListener('click', ()=>{
+        if(!currentCanvasWhite){ status('Generate first'); return; }
+        const transparent = makeTransparentCanvas(currentCanvasWhite);
+        const fname = 'qr-transparent-' + Date.now() + '.png';
+        downloadCanvasPNG(transparent, fname);
+      });
 
-    $('#saveUrl').addEventListener('click', ()=>{
-      const v = $('#url').value.trim();
-      if(!v){ status('Nothing to save'); return; }
-      localStorage.setItem('qr.fixedUrl', v);
-      status('URL remembered');
-    });
-
-    $('#dlWhite').addEventListener('click', ()=>{
-      if(!currentCanvasWhite){ status('Generate first'); return; }
-      const fname = 'qr-white-' + Date.now() + '.png';
-      downloadCanvasPNG(currentCanvasWhite, fname);
-    });
-
-    $('#dlTransparent').addEventListener('click', ()=>{
-      if(!currentCanvasWhite){ status('Generate first'); return; }
-      const transparent = makeTransparentCanvas(currentCanvasWhite);
-      const fname = 'qr-transparent-' + Date.now() + '.png';
-      downloadCanvasPNG(transparent, fname);
+      // Init after listeners are ready
+      const saved = localStorage.getItem('qr.fixedUrl');
+      $('#url').value = saved || 'https://changweihong.github.io/my-linktree/';
+      generate();
     });
   </script>
 </body>
