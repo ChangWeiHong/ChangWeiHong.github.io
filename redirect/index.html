@@ -67,11 +67,15 @@
   const host = u.host; // e.g. changweihong.github.io
   const owner = host.split('.')[0];
   const path = u.pathname.replace(/\/+$/, ''); // strip trailing slash
-  const segments = path.split('/').filter(Boolean);
+  const rawSegments = path.split('/').filter(Boolean);
+  const segments = rawSegments.slice();
+  const lastSeg = segments[segments.length - 1];
+  if(lastSeg && lastSeg.includes('.')) segments.pop(); // drop filename segments
 
-  const defaultProjectSubpath = segments.slice(1).join('/');
+  const defaultProjectRepo = segments[0] ? `${owner}/${segments[0]}` : null;
+  const remainderSegments = segments.slice(1).join('/');
   const defaultUserRepo = `${owner}/${owner}.github.io`;
-  const defaultUserSubpath = segments.join('/');
+  const subpathFromSegments = segments.join('/');
 
   // Optional override: ?repo=owner/repo&path=sub/dir&branch=main
   const qpRepo = u.searchParams.get('repo');
@@ -81,32 +85,41 @@
 
   const repoCandidates = [];
   const seenCandidate = new Set();
-  function addCandidate(repoName, fallbackSubpath){
-    const subpathValue = pathOverride !== null ? pathOverride : fallbackSubpath;
-    const key = `${repoName}|${subpathValue}`;
-    if(seenCandidate.has(key)) return;
-    seenCandidate.add(key);
-    repoCandidates.push({ repo: repoName, subpath: subpathValue });
+  function addCandidate(repoName, fallbackSubpaths){
+    if(!repoName) return;
+    const subpaths = pathOverride !== null ? [pathOverride] : fallbackSubpaths;
+    for(const sp of subpaths){
+      const subpathValue = (sp ?? '').replace(/^\/+|\/+$/g, '');
+      const key = `${repoName}|${subpathValue}`;
+      if(seenCandidate.has(key)) continue;
+      seenCandidate.add(key);
+      repoCandidates.push({ repo: repoName, subpath: subpathValue });
+    }
   }
+
+  const sharedUserSubpaths = [subpathFromSegments, remainderSegments, ''].filter(x => x !== undefined);
+  const sharedProjectSubpaths = [remainderSegments, ''];
 
   if(qpRepo){
-    const fallback = segments.length > 0 ? defaultProjectSubpath : '';
-    addCandidate(qpRepo, fallback);
-  } else if(segments.length === 0){
-    addCandidate(defaultUserRepo, '');
+    addCandidate(qpRepo, sharedProjectSubpaths);
   } else {
-    addCandidate(`${owner}/${segments[0]}`, defaultProjectSubpath);
-    addCandidate(defaultUserRepo, defaultUserSubpath);
+    if(segments.length === 0){
+      addCandidate(defaultUserRepo, ['']);
+    } else {
+      addCandidate(defaultUserRepo, sharedUserSubpaths);
+      addCandidate(defaultProjectRepo, sharedProjectSubpaths);
+    }
   }
 
-  const basePath = path; // e.g. /my-linktree
+  if(repoCandidates.length === 0){
+    addCandidate(defaultUserRepo, [pathOverride !== null ? pathOverride : '']);
+  }
+
+  const basePath = segments.length > 0 ? `/${segments.join('/')}` : '';
   function setContextDisplay(repoName, subpathValue){
     ctxEl.textContent = `${repoName} / ${subpathValue || '(root)'} → ${basePath || '/'}/*`;
   }
 
-  if(repoCandidates.length === 0){
-    addCandidate(defaultUserRepo, pathOverride !== null ? pathOverride : '');
-  }
   setContextDisplay(repoCandidates[0].repo, repoCandidates[0].subpath);
 
   const tryBranches = qpBranch ? [qpBranch] : ["gh-pages","main","master"];
@@ -154,11 +167,13 @@
     errorEl.hidden = true; errorEl.textContent = '';
     hintEl.textContent = '';
 
+    const attempts = [];
     let lastErr;
     for(const candidate of repoCandidates){
       setContextDisplay(candidate.repo, candidate.subpath);
       for(const b of tryBranches){
         try {
+          attempts.push(`${candidate.repo} @ ${candidate.subpath || '(root)'} # ${b}`);
           const data = await fetchDir(candidate.repo, candidate.subpath, b);
           branchPill.textContent = `branch: ${b}`;
           setContextDisplay(candidate.repo, candidate.subpath);
@@ -167,12 +182,14 @@
           return;
         } catch(e){
           lastErr = e;
+          attempts.push(`✖ ${candidate.repo} @ ${candidate.subpath || '(root)'} # ${b} → ${e.message}`);
         }
       }
     }
     branchPill.textContent = 'branch: ?';
     errorEl.hidden = false;
-    errorEl.textContent = `Could not list with branches ${tryBranches.join(', ')}. ${lastErr ? lastErr.message : ''}`;
+    const attemptsMsg = attempts.length ? ` Tried: ${attempts.join('; ')}.` : '';
+    errorEl.textContent = `Could not list with branches ${tryBranches.join(', ')}.${lastErr ? ' ' + lastErr.message : ''}${attemptsMsg}`;
     hintEl.textContent = 'If your Pages uses a different branch, add ?branch=<your-branch>. You can also specify ?repo=owner/repo and ?path=sub/dir.';
   }
 
