@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Malaysia Housing Loan Calculator</title>
+  <meta name="description" content="Simple, static Malaysia housing loan calculator. Works offline. No trackers." />
+  <meta name="theme-color" content="#0f172a" />
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #0f172a;
+      --card: #111827;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --accent: #22d3ee;
+      --danger: #f87171;
+      --ok: #34d399;
+      --border: #1f2937;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, sans-serif;
+      line-height: 1.4;
+    }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 24px; }
+    header { display:flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
+    h1 { font-size: clamp(20px, 4vw, 28px); margin: 0; }
+    .panel { background: linear-gradient(180deg, var(--panel), #0b1324); border: 1px solid var(--border); border-radius: 14px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
+    .col-12 { grid-column: span 12; }
+    .col-6 { grid-column: span 6; }
+    @media (max-width: 720px) { .col-6 { grid-column: span 12; } }
+
+    label { display:block; font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+    input[type="number"], input[type="text"] {
+      width: 100%; padding: 12px 14px; background: var(--card); color: var(--text);
+      border: 1px solid var(--border); border-radius: 10px; outline: none;
+    }
+    input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(34,211,238,.15); }
+
+    .row { display:flex; gap:10px; align-items: center; }
+    .btn { cursor:pointer; background: var(--accent); color:#00212a; border:0; padding: 12px 16px; border-radius: 10px; font-weight: 700; }
+    .btn.secondary { background: #1f2937; color: var(--text); border: 1px solid var(--border); }
+
+    .out { display:grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+    .stat { background: var(--card); border:1px solid var(--border); border-radius: 12px; padding: 14px; }
+    .stat h3 { margin: 0; font-size: 13px; color: var(--muted); font-weight: 600; }
+    .stat p { margin: 6px 0 0; font-size: 20px; font-weight: 800; }
+    @media (max-width: 720px) { .out { grid-template-columns: 1fr; } }
+
+    details { margin-top: 12px; }
+    summary { cursor: pointer; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px; }
+    th, td { padding: 8px; border-bottom: 1px solid var(--border); text-align: right; }
+    th:first-child, td:first-child { text-align: left; }
+    .footer { color: var(--muted); font-size: 12px; margin-top: 18px; display:flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+    .pill { padding: 6px 8px; background: #0c1728; border:1px solid var(--border); border-radius: 999px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Malaysia Housing Loan Calculator</h1>
+      <button class="btn secondary" id="shareBtn" title="Copy shareable link">Share</button>
+    </header>
+
+    <section class="panel">
+      <div class="grid">
+        <div class="col-6">
+          <label for="price">Property price (RM)</label>
+          <input id="price" type="number" inputmode="decimal" min="0" placeholder="e.g. 450000" />
+        </div>
+        <div class="col-6">
+          <label for="down">Down payment (RM or %)</label>
+          <div class="row">
+            <input id="down" type="number" inputmode="decimal" min="0" class="flex1" placeholder="e.g. 45000" />
+            <select id="downType" aria-label="Down payment type">
+              <option value="rm">RM</option>
+              <option value="pct">%</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-6">
+          <label for="rate">Interest rate p.a. (%)</label>
+          <input id="rate" type="number" inputmode="decimal" min="0" step="0.01" placeholder="e.g. 3.7" />
+        </div>
+        <div class="col-6">
+          <label for="years">Tenure (years)</label>
+          <input id="years" type="number" inputmode="numeric" min="1" max="35" placeholder="e.g. 35" />
+        </div>
+        <div class="col-12">
+          <div class="row">
+            <button id="calc" class="btn">Calculate</button>
+            <button id="reset" class="btn secondary">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="out" id="out" hidden>
+        <div class="stat"><h3>Monthly payment</h3><p id="mth">–</p></div>
+        <div class="stat"><h3>Total interest</h3><p id="tint">–</p></div>
+        <div class="stat"><h3>Total paid</h3><p id="tpaid">–</p></div>
+      </div>
+
+      <details id="schWrap" hidden>
+        <summary>Show amortization schedule</summary>
+        <table id="sched">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Payment (RM)</th>
+              <th>Principal</th>
+              <th>Interest</th>
+              <th>Balance</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </details>
+
+      <div class="footer">
+        <span class="pill">Formula: PMT = P × r / (1 − (1 + r)<sup>−n</sup>) where r = annual%/12/100, n = years×12</span>
+        <span class="pill">Static. No servers. Saves inputs locally.</span>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const fmt = (v) => new Intl.NumberFormat('en-MY', { style: 'currency', currency: 'MYR', maximumFractionDigits: 2 }).format(v || 0).replace('MYR', 'RM');
+
+    const fields = ['price','down','downType','rate','years'];
+
+    function save() {
+      const data = Object.fromEntries(fields.map(k => [k, $(k).value]));
+      localStorage.setItem('my.msia.mortgage.v1', JSON.stringify(data));
+    }
+    function load() {
+      const url = new URL(location.href);
+      const qs = Object.fromEntries(url.searchParams.entries());
+      let data = null;
+      if (Object.keys(qs).length) {
+        data = qs; // allow permalink values
+      } else {
+        try { data = JSON.parse(localStorage.getItem('my.msia.mortgage.v1')||'null'); } catch {}
+      }
+      if (data) {
+        for (const k of fields) if (data[k] != null) $(k).value = data[k];
+      } else {
+        // sensible defaults
+        $('rate').value = 3.7; $('years').value = 35;
+      }
+    }
+
+    function calc() {
+      const price = +$('price').value || 0;
+      const downVal = +$('down').value || 0;
+      const downType = $('downType').value;
+      const rate = (+$('rate').value || 0) / 100 / 12; // monthly
+      const years = +$('years').value || 0;
+      const n = years * 12;
+
+      if (!price || !years || rate < 0) {
+        alert('Fill in price, rate and tenure properly. Basic math still applies.');
+        return;
+      }
+
+      const downAmt = downType === 'pct' ? price * (downVal/100) : downVal;
+      const principal = Math.max(price - downAmt, 0);
+
+      let pmt = 0;
+      if (rate === 0) {
+        pmt = principal / n;
+      } else {
+        pmt = principal * rate / (1 - Math.pow(1 + rate, -n));
+      }
+
+      const totalPaid = pmt * n;
+      const totalInterest = Math.max(totalPaid - principal, 0);
+
+      $('mth').textContent = fmt(pmt);
+      $('tint').textContent = fmt(totalInterest);
+      $('tpaid').textContent = fmt(totalPaid);
+      $('out').hidden = false;
+
+      // build schedule lazily
+      buildSchedule(principal, rate, n, pmt);
+
+      // save + update URL for sharing
+      save();
+      const url = new URL(location.href);
+      url.search = new URLSearchParams({
+        price: $('price').value,
+        down: $('down').value,
+        downType: $('downType').value,
+        rate: $('rate').value,
+        years: $('years').value
+      }).toString();
+      history.replaceState(null, '', url);
+    }
+
+    function buildSchedule(P, r, n, pmt) {
+      const tbody = $('sched').querySelector('tbody');
+      tbody.innerHTML = '';
+      // cap rows for performance; full schedule only when user expands
+      const maxRows = 360; // 30y cap visual, but we handle up to 35y
+      let bal = P;
+      for (let m = 1; m <= n && m <= maxRows; m++) {
+        const interest = r * bal;
+        const principal = Math.min(pmt - interest, bal);
+        bal = Math.max(bal - principal, 0);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${m}</td><td>${fmt(pmt)}</td><td>${fmt(principal)}</td><td>${fmt(interest)}</td><td>${fmt(bal)}</td>`;
+        tbody.appendChild(tr);
+      }
+      $('schWrap').hidden = false;
+    }
+
+    $('calc').addEventListener('click', calc);
+    $('reset').addEventListener('click', () => {
+      for (const k of fields) $(k).value = '';
+      $('rate').value = 3.7; $('years').value = 35; $('out').hidden = true; $('schWrap').hidden = true;
+      history.replaceState(null, '', location.pathname);
+      localStorage.removeItem('my.msia.mortgage.v1');
+    });
+
+    $('shareBtn').addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(location.href);
+        const t = event.target; t.textContent = 'Link copied'; setTimeout(()=>t.textContent='Share', 1500);
+      } catch {
+        alert('Clipboard said no. Manually copy the URL.');
+      }
+    });
+
+    // Load defaults on boot
+    load();
+  </script>
+</body>
+</html>
