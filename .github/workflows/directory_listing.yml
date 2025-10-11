@@ -1,36 +1,49 @@
-name: root-directory-listing
-on:
-  push:
-    branches:
-      - main  # Set a branch name to trigger deployment
+name: pages-with-recursive-sitemap
+on: [push]
+
 jobs:
-  pages-directory-listing:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Generate Directory Listing for root
+      # OPTIONAL: also generate per-folder listings (clickable browsing)
+      - name: Generate per-directory listings
         uses: jayanta525/github-pages-directory-listing@v4.0.0
         with:
-          FOLDER: .       # <-- root folder
-          OUTPUT_PATH: .  # optional; ensures it outputs to root
+          FOLDER: .
+
+      # SINGLE PAGE: recursive sitemap index
+      - name: Generate recursive sitemap index.html
+        run: |
+          cat > index.html <<'HTML'
+          <!doctype html><meta charset="utf-8">
+          <title>Repository sitemap</title>
+          <h1>Repository sitemap</h1>
+          <ul>
+          HTML
+          # list everything except the .git, .github/workflows, and the generated artifact dirs
+          find . -type d \( -name .git -o -name .github \) -prune -o -print | \
+          sed 's|^\./||' | while read p; do
+            if [ -z "$p" ]; then continue; fi
+            if [ -d "$p" ]; then
+              echo "<li><strong><a href=\"$p/\">$p/</a></strong></li>" >> index.html
+            else
+              echo "<li><a href=\"$p\">$p</a></li>" >> index.html
+            fi
+          done
+          echo "</ul>" >> index.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'       # deploy entire repo (root)
+          path: .
 
   deploy:
-    needs: pages-directory-listing
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    needs: build
+    permissions: { pages: write, id-token: write }
+    environment: { name: github-pages, url: ${{ steps.deployment.outputs.page_url }} }
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
+      - id: deployment
         uses: actions/deploy-pages@v4
