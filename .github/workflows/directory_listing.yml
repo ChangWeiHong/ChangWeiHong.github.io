@@ -1,0 +1,36 @@
+name: root-directory-listing
+on:
+  push:
+    branches:
+      - main  # Set a branch name to trigger deployment
+jobs:
+  pages-directory-listing:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Generate Directory Listing for root
+        uses: jayanta525/github-pages-directory-listing@v4.0.0
+        with:
+          FOLDER: .       # <-- root folder
+          OUTPUT_PATH: .  # optional; ensures it outputs to root
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'       # deploy entire repo (root)
+
+  deploy:
+    needs: pages-directory-listing
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
