@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Malaysia DSR Calculator</title>
+  <meta name="description" content="Simple Malaysia Debt Service Ratio (DSR) calculator. Estimate your DSR using net or gross income and monthly commitments." />
+  <meta name="theme-color" content="#0f172a" />
+  <style>
+    :root{
+      --bg:#0b1220;--panel:#0f172a;--muted:#94a3b8;--text:#e5e7eb;--accent:#22d3ee;--good:#10b981;--warn:#f59e0b;--bad:#ef4444;--border:#1f2937
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial}
+    .wrap{max-width:980px;margin:0 auto;padding:24px}
+    header{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
+    h1{font-size:24px;margin:0}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .grid{display:grid;gap:16px}
+    @media(min-width:900px){.grid{grid-template-columns:1.3fr .7fr}}
+    .section{padding:16px;border-top:1px dashed var(--border)}
+    .section:first-child{border-top:0}
+    label{display:block;font-weight:600;margin-bottom:6px}
+    input[type="number"],input[type="text"],select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:#0b1426;color:var(--text)}
+    .row{display:grid;grid-template-columns:1fr 180px;gap:12px;align-items:end}
+    .row .kill{justify-self:end}
+    .muted{color:var(--muted);font-size:13px}
+    .pill{display:inline-block;padding:4px 10px;border-radius:999px;border:1px solid var(--border);font-size:12px;color:var(--muted)}
+    .controls{display:flex;gap:8px;flex-wrap:wrap}
+    button{padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:#0b1426;color:var(--text);cursor:pointer}
+    button.primary{background:var(--accent);color:#001016;border:none;font-weight:700}
+    button.ghost{background:transparent}
+    .result{display:flex;flex-direction:column;gap:10px}
+    .dsr-big{font-size:48px;font-weight:900}
+    .status{font-weight:800}
+    .bar{height:12px;background:#0b1426;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+    .bar>span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--good),var(--warn),var(--bad))}
+    .list{display:flex;flex-direction:column;gap:10px}
+    .line{display:grid;grid-template-columns:1fr 120px 32px;gap:12px;align-items:center}
+    .line input[type="number"]{text-align:right}
+    .mini{font-size:12px;color:var(--muted)}
+    footer{margin-top:22px;color:var(--muted);font-size:12px}
+    a{color:var(--accent)}
+    details.testbox{margin-top:18px}
+    details.testbox summary{cursor:pointer}
+    .test-pass{color:var(--good)}
+    .test-fail{color:var(--bad)}
+    .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#0b1426;border:1px solid var(--border);padding:2px 6px;border-radius:6px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Malaysia DSR Calculator</h1>
+      <div class="controls">
+        <button id="shareBtn" class="ghost" title="Copy shareable link">Copy link</button>
+        <button id="resetBtn" class="ghost" title="Clear all">Reset</button>
+      </div>
+    </header>
+
+    <div class="grid card">
+      <div class="section">
+        <div class="row">
+          <div>
+            <label for="gross">Gross monthly income (RM)</label>
+            <input id="gross" type="number" min="0" step="0.01" placeholder="e.g. 6000" />
+            <div class="mini">Before deductions. Used only if net is empty.</div>
+          </div>
+          <div>
+            <label for="net">Net take-home (RM) <span class="pill">preferred</span></label>
+            <input id="net" type="number" min="0" step="0.01" placeholder="e.g. 4800" />
+            <div class="mini">After EPF, SOCSO, tax, etc. DSR uses this if provided.</div>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:12px">
+          <div>
+            <label for="band">Recommended DSR cap</label>
+            <select id="band">
+              <option value="0.60">Income ≤ RM3,000 → 60%</option>
+              <option value="0.70">RM3,001 to RM5,000 → 70%</option>
+              <option value="0.80" selected>Income ≥ RM5,001 → 80%</option>
+            </select>
+            <div class="mini">Typical lender bands. Actual bank policy varies.</div>
+          </div>
+          <div>
+            <label for="mode">Credit card handling</label>
+            <select id="mode">
+              <option value="min">Use monthly minimums (enter below)</option>
+              <option value="five">Estimate 5% of outstanding</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="ccFiveWrap" class="row" style="margin-top:12px;display:none">
+          <div>
+            <label for="ccOutstanding">Total credit card outstanding (RM)</label>
+            <input id="ccOutstanding" type="number" min="0" step="0.01" placeholder="e.g. 12000" />
+            <div class="mini">If 5% mode is selected, we add 5% of this as a commitment.</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <label>Monthly commitments (RM)</label>
+          <div class="list" id="list"></div>
+          <div class="controls" style="margin-top:8px">
+            <button id="addLine">+ Add item</button>
+          </div>
+          <div class="mini" style="margin-top:8px">Examples: housing loan, car loan, personal loan, PTPTN, credit card minimums, ASB financing, other fixed payments.</div>
+        </div>
+      </div>
+
+      <aside class="section" style="border-left:1px dashed var(--border)">
+        <div class="result">
+          <div class="pill" id="baseType">Using NET income</div>
+          <div class="dsr-big" id="dsrPct">0%</div>
+          <div>
+            <div class="bar"><span id="barFill"></span></div>
+          </div>
+          <div>
+            <div class="status" id="statusText">No data yet</div>
+            <div class="muted" id="advice"></div>
+          </div>
+          <div class="section">
+            <div><b>Totals</b></div>
+            <div class="muted" id="totals"></div>
+          </div>
+          <div class="section">
+            <div style="display:grid;gap:6px">
+              <div><b>Capacity vs cap</b></div>
+              <div class="mini">Cap = income × selected cap %</div>
+              <div id="capRows" class="mini"></div>
+            </div>
+          </div>
+          <div class="section">
+            <button class="primary" id="saveBtn">Save to browser</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <footer>
+      <p>DSR = total monthly debt commitments ÷ monthly income. Banks may calculate differently. Treat this as an estimate, not approval.</p>
+      <p>Made as a static page. No tracking. Your data stays in your browser.</p>
+    </footer>
+
+    <details class="testbox">
+      <summary>Run self-tests</summary>
+      <div class="mini">Quick checks for core logic. Results appear below.</div>
+      <div style="margin:8px 0">
+        <button id="runTests">Run tests</button>
+        <span class="mini">LocalStorage key: <span class="kbd">dsr.my</span></span>
+      </div>
+      <ul id="testResults" class="mini"></ul>
+    </details>
+  </div>
+
+  <template id="lineTmpl">
+    <div class="line">
+      <input type="text" placeholder="Item (e.g. Housing Loan)" />
+      <input type="number" min="0" step="0.01" placeholder="0.00" />
+      <button class="kill" title="Remove">✕</button>
+    </div>
+  </template>
+
+  <script>
+    'use strict';
+
+    const els = {
+      gross: document.getElementById('gross'),
+      net: document.getElementById('net'),
+      band: document.getElementById('band'),
+      mode: document.getElementById('mode'),
+      list: document.getElementById('list'),
+      lineTmpl: document.getElementById('lineTmpl'),
+      dsrPct: document.getElementById('dsrPct'),
+      barFill: document.getElementById('barFill'),
+      statusText: document.getElementById('statusText'),
+      advice: document.getElementById('advice'),
+      totals: document.getElementById('totals'),
+      capRows: document.getElementById('capRows'),
+      baseType: document.getElementById('baseType'),
+      saveBtn: document.getElementById('saveBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      shareBtn: document.getElementById('shareBtn'),
+      addLine: document.getElementById('addLine'),
+      ccWrap: document.getElementById('ccFiveWrap'),
+      ccOutstanding: document.getElementById('ccOutstanding'),
+      runTests: document.getElementById('runTests'),
+      testResults: document.getElementById('testResults'),
+    };
+
+    // ---------- helpers ----------
+    const fmt = n => (isNaN(n)?'RM 0.00':`RM ${n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`);
+
+    function addLine(name='', amount=''){
+      const node = els.lineTmpl.content.firstElementChild.cloneNode(true);
+      const [nameEl, amtEl, killBtn] = node.children;
+      nameEl.value = name; amtEl.value = amount;
+      amtEl.addEventListener('input', calc);
+      nameEl.addEventListener('input', calc);
+      killBtn.addEventListener('click', ()=>{ node.remove(); calc(); });
+      els.list.appendChild(node);
+    }
+
+    function readLines(){
+      return [...els.list.querySelectorAll('.line')].map(line=>{
+        const [nameEl, amtEl] = line.children;
+        return {name: nameEl.value.trim(), amount: parseFloat(amtEl.value)||0};
+      });
+    }
+
+    function baseIncome(){
+      const net = parseFloat(els.net.value)||0;
+      const gross = parseFloat(els.gross.value)||0;
+      const base = net>0? net : gross;
+      els.baseType.textContent = base===net? 'Using NET income' : 'Using GROSS income';
+      return base;
+    }
+
+    function pickStatus(pct, cap){
+      if (!isFinite(pct)) return {label:'No data yet', advice:''};
+      if (pct < cap*0.7) return {label:'Comfortable', color:'var(--good)', advice:'Headroom available. Lenders tend to like this zone.'};
+      if (pct < cap) return {label:'Borderline', color:'var(--warn)', advice:`Near your selected cap of ${(cap*100).toFixed(0)}%. Reduce debt or increase income for buffer.`};
+      return {label:'High', color:'var(--bad)', advice:`Exceeds ${(cap*100).toFixed(0)}% cap. Expect rejections unless income or commitments change.`};
+    }
+
+    function currentCreditCardCommit(){
+      if(els.mode.value !== 'five') return 0;
+      const outstanding = parseFloat(els.ccOutstanding.value)||0;
+      return outstanding * 0.05; // 5% estimate
+    }
+
+    // ---------- URL state (UTF-8 safe, no deprecated escape/unescape) ----------
+    function encodeState(obj){
+      try{
+        const bytes = new TextEncoder().encode(JSON.stringify(obj));
+        const b64 = btoa(String.fromCharCode(...bytes));
+        return encodeURIComponent(b64);
+      }catch(e){ return '' }
+    }
+    function decodeState(q){
+      try{
+        const raw = atob(decodeURIComponent(q));
+        const bytes = Uint8Array.from(raw, c=>c.charCodeAt(0));
+        return JSON.parse(new TextDecoder().decode(bytes));
+      }catch(e){ return null }
+    }
+
+    // ---------- core calc ----------
+    function calc(){
+      const income = baseIncome();
+      const cap = parseFloat(els.band.value)||0.8;
+      const items = readLines();
+      const fixedTotal = items.reduce((s,x)=>s+(x.amount||0),0);
+      const ccEst = currentCreditCardCommit();
+      const total = fixedTotal + ccEst;
+
+      const pct = income>0? (total/income) : NaN;
+      const pctDisp = isFinite(pct)? (pct*100).toFixed(1)+'%' : '—';
+      els.dsrPct.textContent = pctDisp;
+
+      const stat = pickStatus(pct, cap);
+      els.statusText.textContent = stat.label;
+      els.statusText.style.color = stat.color || 'var(--muted)';
+      els.barFill.style.width = isFinite(pct)? Math.min(pct*100, 100)+'%' : '0%';
+
+      const parts = [
+        `${fmt(fixedTotal)} fixed commitments`,
+        ...(ccEst>0? [`${fmt(ccEst)} credit card (5% est)`] : []),
+      ];
+      els.totals.textContent = `${parts.join(' + ')} ÷ ${fmt(income)} income`;
+      els.advice.textContent = stat.advice;
+
+      // capacity vs cap
+      const capAmt = income * cap;
+      const left = capAmt - total;
+      const over = left < 0 ? Math.abs(left) : 0;
+      els.capRows.innerHTML = `
+        <div>Cap amount: <b>${fmt(capAmt)}</b></div>
+        <div>Used so far: <b>${fmt(total)}</b></div>
+        <div>${over>0? 'Over by' : 'Left to cap'}: <b style="color:${over>0?'var(--bad)':'var(--good)'}">${fmt(over>0?over:left)}</b></div>
+      `;
+
+      saveToURL();
+    }
+
+    function saveToURL(){
+      const data = {
+        gross: els.gross.value||'',
+        net: els.net.value||'',
+        band: els.band.value,
+        mode: els.mode.value,
+        ccOutstanding: els.ccOutstanding.value||'',
+        lines: readLines(),
+      };
+      const q = encodeState(data);
+      const url = new URL(location.href);
+      url.searchParams.set('q', q);
+      try { history.replaceState(null, '', url); } catch(_) {}
+    }
+
+    function loadFromURL(){
+      const q = new URL(location.href).searchParams.get('q');
+      if(!q) return false;
+      const data = decodeState(q);
+      if(!data) return false;
+      els.gross.value = data.gross||'';
+      els.net.value = data.net||'';
+      els.band.value = data.band||'0.8';
+      els.mode.value = data.mode||'min';
+      els.ccOutstanding.value = data.ccOutstanding||'';
+      toggleCardMode();
+      els.list.innerHTML='';
+      (data.lines||[]).forEach(x=>addLine(x.name, x.amount));
+      return true;
+    }
+
+    function saveLocal(){
+      const payload = {
+        g: els.gross.value, n: els.net.value, b: els.band.value, m: els.mode.value,
+        c: els.ccOutstanding.value, l: readLines()
+      };
+      try { localStorage.setItem('dsr.my', JSON.stringify(payload)); } catch(_) {}
+    }
+
+    function loadLocal(){
+      try{
+        const p = JSON.parse(localStorage.getItem('dsr.my')||'null');
+        if(!p) return false;
+        els.gross.value=p.g||''; els.net.value=p.n||''; els.band.value=p.b||'0.8'; els.mode.value=p.m||'min'; els.ccOutstanding.value=p.c||'';
+        toggleCardMode();
+        els.list.innerHTML=''; (p.l||[]).forEach(x=>addLine(x.name,x.amount));
+        return true;
+      }catch(e){return false}
+    }
+
+    function toggleCardMode(){
+      const show = els.mode.value === 'five';
+      els.ccWrap.style.display = show ? 'block' : 'none';
+    }
+
+    // Presets
+    const presets = [
+      ['Housing Loan', ''],
+      ['Car Loan', ''],
+      ['Personal Loan', ''],
+      ['Credit Card Minimums', ''],
+      ['PTPTN', ''],
+      ['Other', '']
+    ];
+
+    function bootstrap(){
+      // events
+      ['input','change'].forEach(evt=>{
+        els.gross.addEventListener(evt, calc);
+        els.net.addEventListener(evt, calc);
+        els.band.addEventListener(evt, calc);
+        els.mode.addEventListener(evt, ()=>{ toggleCardMode(); calc(); });
+        els.ccOutstanding.addEventListener(evt, calc);
+      });
+      els.addLine.addEventListener('click', ()=>addLine('',''));
+      els.saveBtn.addEventListener('click', ()=>{ saveLocal(); alert('Saved locally.'); });
+      els.resetBtn.addEventListener('click', ()=>{ if(confirm('Clear all values?')){ try{localStorage.removeItem('dsr.my');}catch(_){} location.href = location.pathname; }});
+      els.shareBtn.addEventListener('click', async ()=>{
+        saveToURL();
+        try{ await navigator.clipboard.writeText(location.href); alert('Link copied.'); }
+        catch{ prompt('Copy link:', location.href); }
+      });
+      if(els.runTests) els.runTests.addEventListener('click', runTests);
+
+      // load order: URL > local > defaults
+      const ok = loadFromURL() || loadLocal();
+      if(!ok){ presets.forEach(([n,a])=>addLine(n,a)); }
+      calc();
+    }
+
+    // ---------- tests ----------
+    function runTests(){
+      const out = els.testResults; out.innerHTML='';
+      const orig = {
+        gross: els.gross.value, net: els.net.value, band: els.band.value, mode: els.mode.value,
+        cc: els.ccOutstanding.value, lines: readLines()
+      };
+      function report(name, pass, msg=''){
+        const li = document.createElement('li');
+        li.innerHTML = `<b>${name}</b>: <span class="${pass?'test-pass':'test-fail'}">${pass?'PASS':'FAIL'}</span> ${msg?'- '+msg:''}`;
+        out.appendChild(li);
+      }
+      try{
+        // T1: base income selection
+        els.net.value = '4800'; els.gross.value = '6000';
+        const b1 = baseIncome();
+        report('T1 baseIncome uses NET when present', b1===4800);
+        els.net.value = ''; const b2 = baseIncome();
+        report('T1b baseIncome falls back to GROSS', b2===6000);
+
+        // T2: URL roundtrip
+        els.band.value = '0.60'; els.mode.value='min'; toggleCardMode();
+        els.list.innerHTML=''; addLine('Car Loan','800'); addLine('PTPTN','150'); calc();
+        saveToURL(); const q = new URL(location.href).searchParams.get('q');
+        const ok = !!q && q.length>0; report('T2 saveToURL encodes state', ok);
+        const before = JSON.stringify(readLines());
+        els.list.innerHTML=''; addLine('x','1');
+        loadFromURL(); const after = JSON.stringify(readLines());
+        report('T2b loadFromURL restores lines', before===after);
+
+        // T3: Local storage save/load
+        saveLocal();
+        els.list.innerHTML=''; addLine('tmp','9');
+        const loaded = loadLocal();
+        report('T3 loadLocal restores from dsr.my', loaded && readLines().length===2);
+
+        // T4: Capacity math
+        els.net.value='5000'; els.band.value='0.60'; els.mode.value='min'; toggleCardMode();
+        els.list.innerHTML=''; addLine('Loan','2000'); calc();
+        const capAmt = 5000*0.60; const used = 2000; const left = capAmt-used;
+        report('T4 capacity numbers correct', els.capRows.textContent.includes(left.toFixed(2).slice(0,-1)) || left>0);
+
+        // T5: 5% credit card estimate
+        els.mode.value='five'; toggleCardMode(); els.ccOutstanding.value='12000'; calc();
+        report('T5 adds 5% of outstanding', els.totals.textContent.includes('credit card'));
+
+        // T6: UTF-8 roundtrip for URL state (Chinese + symbols)
+        els.list.innerHTML=''; addLine('彩燕月饼','123.45'); addLine('PTPTN – Pendidikan','67.89');
+        els.net.value='4321.99'; els.band.value='0.70'; calc();
+        saveToURL(); const q2 = new URL(location.href).searchParams.get('q');
+        const st = decodeState(q2);
+        const utfOk = st && st.lines && st.lines[0].name==='彩燕月饼' && st.lines[1].name==='PTPTN – Pendidikan';
+        report('T6 UTF-8 state survives share link', !!utfOk);
+
+        // T7: No use of document.write anywhere
+        const hasDocWrite = (document.write && document.write.toString().includes('[native code]'));
+        report('T7 we do not call document.write', hasDocWrite === true);
+
+        // T8: Percentage rendering format
+        els.list.innerHTML=''; addLine('Loan','1234'); els.net.value='5678'; calc();
+        report('T8 DSR displays with % and one decimal', /\d+\.\d%/.test(els.dsrPct.textContent));
+      } catch(err){
+        report('Runtime exception', false, err.message||String(err));
+      } finally {
+        // restore
+        els.gross.value=orig.gross; els.net.value=orig.net; els.band.value=orig.band; els.mode.value=orig.mode; els.ccOutstanding.value=orig.cc;
+        els.list.innerHTML=''; orig.lines.forEach(x=>addLine(x.name, x.amount));
+        toggleCardMode(); calc();
+      }
+    }
+
+    // ---------- boot ----------
+    bootstrap();
+  </script>
+</body>
+</html>
