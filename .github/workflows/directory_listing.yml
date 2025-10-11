@@ -1,49 +1,48 @@
-name: pages-with-recursive-sitemap
+name: sitemap-under-subpath
 on: [push]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
 
-      # OPTIONAL: also generate per-folder listings (clickable browsing)
-      - name: Generate per-directory listings
-        uses: jayanta525/github-pages-directory-listing@v4.0.0
-        with:
-          FOLDER: .
+      # Create sitemap folder
+      - name: Create sitemap directory
+        run: mkdir -p sitemap
 
-      # SINGLE PAGE: recursive sitemap index
-      - name: Generate recursive sitemap index.html
+      - name: Generate recursive sitemap inside /sitemap
         run: |
-          cat > index.html <<'HTML'
-          <!doctype html><meta charset="utf-8">
-          <title>Repository sitemap</title>
-          <h1>Repository sitemap</h1>
-          <ul>
-          HTML
-          # list everything except the .git, .github/workflows, and the generated artifact dirs
-          find . -type d \( -name .git -o -name .github \) -prune -o -print | \
-          sed 's|^\./||' | while read p; do
-            if [ -z "$p" ]; then continue; fi
-            if [ -d "$p" ]; then
-              echo "<li><strong><a href=\"$p/\">$p/</a></strong></li>" >> index.html
-            else
-              echo "<li><a href=\"$p\">$p</a></li>" >> index.html
-            fi
-          done
-          echo "</ul>" >> index.html
+          set -euo pipefail
+          echo '<!doctype html><meta charset="utf-8"><title>Repository sitemap</title><h1>Repository sitemap</h1><ul>' > sitemap/index.html
+          find . -mindepth 1 -not -path "./.git/*" -not -path "./.github/*" -print \
+          | sed 's|^\./||' \
+          | while read -r p; do
+              if [ -d "$p" ]; then
+                printf '<li><strong><a href="../%s/">%s/</a></strong></li>\n' "$p" "$p" >> sitemap/index.html
+              else
+                printf '<li><a href="../%s">%s</a></li>\n' "$p" "$p" >> sitemap/index.html
+              fi
+            done
+          echo '</ul>' >> sitemap/index.html
 
-      - name: Upload artifact
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: .
 
   deploy:
     needs: build
-    permissions: { pages: write, id-token: write }
-    environment: { name: github-pages, url: ${{ steps.deployment.outputs.page_url }} }
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
     steps:
-      - id: deployment
+      - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
